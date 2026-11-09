@@ -47,8 +47,13 @@ class MainActivity : FlutterActivity() {
                     }
                 }
                 "stopProtection" -> {
-                    stopService(Intent(this, DnsFilterVpnService::class.java))
-                    result.success(true)
+                    try {
+                        val intent = Intent(this, DnsFilterVpnService::class.java).setAction(DnsFilterVpnService.ACTION_STOP)
+                        startService(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("vpn_stop_failed", e.message, null)
+                    }
                 }
                 "clearState" -> {
                     AppStateStorage.clear(getSharedPreferences("stop_it_private", MODE_PRIVATE))

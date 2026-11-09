@@ -19,7 +19,19 @@ class _ProtectionScreenState extends State<ProtectionScreen> {
     final s = context.s;
     if (widget.data.protectionOn) {
       final approved = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: Text(s.t('turn_off')), content: Text(s.t('dns_note')), actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(s.t('cancel'))), TextButton(onPressed: () => Navigator.pop(c, true), child: Text(s.t('turn_off')))]));
-      if (approved == true) await widget.data.disableProtection();
+      if (approved == true && mounted) {
+        setState(() => busy = true);
+        try {
+          final stopped = await widget.data.disableProtection();
+          if (!stopped && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('stop_failed'))));
+          }
+        } catch (_) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('stop_failed'))));
+        } finally {
+          if (mounted) setState(() => busy = false);
+        }
+      }
       return;
     }
     var accepted = false;

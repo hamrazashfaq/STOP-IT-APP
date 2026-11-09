@@ -104,7 +104,23 @@ class AppData extends ChangeNotifier {
     await refreshNativeHistory();
     return protectionOn;
   }
-  Future<void> disableProtection() async { await NativeBridge.stopProtection(); protectionOn = false; notifyListeners(); }
+  Future<bool> disableProtection() async {
+    final requested = await NativeBridge.stopProtection();
+    if (!requested) return false;
+    // Wait for Android's VPN interface to actually disappear before showing OFF.
+    for (var attempt = 0; attempt < 20; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      final current = await NativeBridge.protectionStatus();
+      if (!current) {
+        protectionOn = false;
+        notifyListeners();
+        return true;
+      }
+    }
+    protectionOn = await NativeBridge.protectionStatus();
+    notifyListeners();
+    return !protectionOn;
+  }
   Future<void> restartRecovery() async {
     if (currentStreak > 0) completedDaysBefore += currentStreak;
     recoveryStarted = DateTime.now();

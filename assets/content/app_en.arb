@@ -152,5 +152,6 @@
   "faq_relapse": "What if I have a setback?",
   "about_body": "STOP IT! is an offline-first self-discipline companion. Its optional local VPN filters DNS domain requests on this device. It is not a therapy service or a guarantee against exposure.",
   "support_note": "If urges or distress feel difficult to manage, consider speaking with a qualified mental-health professional or a trusted person. You deserve compassionate support.",
-  "setting_desc": "Your app, your data, your choices."
+  "setting_desc": "Your app, your data, your choices.",
+  "stop_failed": "Could not stop protection. Check Android VPN settings and try again."
 }

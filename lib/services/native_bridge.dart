@@ -33,8 +33,9 @@ class NativeBridge {
     if (Platform.isAndroid) await _channel.invokeMethod<bool>('requestNotifications');
   }
 
-  static Future<void> stopProtection() async {
-    if (Platform.isAndroid) await _channel.invokeMethod<bool>('stopProtection');
+  static Future<bool> stopProtection() async {
+    if (!Platform.isAndroid) return false;
+    return await _channel.invokeMethod<bool>('stopProtection') ?? false;
   }
 
   static Future<void> clearState() async {

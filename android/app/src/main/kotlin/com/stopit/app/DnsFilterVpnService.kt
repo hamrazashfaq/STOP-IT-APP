@@ -30,6 +30,7 @@ import org.json.JSONObject
 class DnsFilterVpnService : VpnService() {
     companion object {
         const val ACTION_START = "com.stopit.app.START_FILTER"
+        const val ACTION_STOP = "com.stopit.app.STOP_FILTER"
         private const val CHANNEL_ID = "stop_it_protection"
         @Volatile var isActive: Boolean = false
             private set
@@ -56,6 +57,13 @@ class DnsFilterVpnService : VpnService() {
     private var blockedEventCounter = 0
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            // A VPN can remain system-bound after stopService(), so release its TUN file
+            // descriptor here immediately rather than waiting for onDestroy().
+            stopFiltering()
+            stopSelfResult(startId)
+            return START_NOT_STICKY
+        }
         if ((intent?.action == ACTION_START || intent == null) && tunnel == null) startFiltering()
         return START_STICKY
     }
@@ -74,15 +82,27 @@ class DnsFilterVpnService : VpnService() {
                 .addRoute("10.111.0.1", 32)
                 .setBlocking(true)
                 .establish()
-            if (tunnel == null) { stopSelf(); return }
+            if (tunnel == null) { stopFiltering(); stopSelf(); return }
             stopping.set(false)
             isActive = true
             worker = Thread({ dnsLoop() }, "stop-it-dns-filter").also { it.start() }
             updateOngoingNotification("Protection is on")
         } catch (_: Exception) {
-            isActive = false
+            stopFiltering()
             stopSelf()
         }
+    }
+
+    /** Releases the VPN interface immediately, even if Android still binds this service. */
+    private fun stopFiltering() {
+        stopping.set(true)
+        isActive = false
+        try { tunnel?.close() } catch (_: Exception) { }
+        tunnel = null
+        worker?.interrupt()
+        worker = null
+        try { (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).apply { cancel(41); cancel(42) } } catch (_: Exception) { }
+        if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE) else stopForeground(true)
     }
 
     private fun dnsLoop() {
@@ -279,12 +299,9 @@ class DnsFilterVpnService : VpnService() {
         else @Suppress("DEPRECATION") Notification.Builder(this).setSmallIcon(android.R.drawable.ic_lock_lock).setContentTitle("STOP IT! protection").setContentText(text).setOngoing(true).setContentIntent(openApp).build()
     }
 
-    override fun onRevoke() { stopSelf(); super.onRevoke() }
+    override fun onRevoke() { stopFiltering(); stopSelf(); super.onRevoke() }
     override fun onDestroy() {
-        stopping.set(true); isActive = false
-        try { tunnel?.close() } catch (_: Exception) { }
-        tunnel = null
-        if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE) else stopForeground(true)
+        stopFiltering()
         super.onDestroy()
     }
 }
