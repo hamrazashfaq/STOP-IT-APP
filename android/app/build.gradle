@@ -31,7 +31,7 @@ android {
             // A locally installable debug-signed APK is possible before setup.
             // Play uploads must be built after configuring your private upload key.
             signingConfig = keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
-            minifyEnabled false
+            minifyEnabled true
         }
     }
     defaultConfig {
