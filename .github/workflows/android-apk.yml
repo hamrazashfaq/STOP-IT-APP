@@ -42,7 +42,14 @@ jobs:
         run: python3 tool/verify_project.py
 
       - name: Run Flutter static analysis
-        run: flutter analyze --no-pub
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-pub --machine > /tmp/flutter-analyze.txt 2>&1
+          result=$?
+          cat /tmp/flutter-analyze.txt
+          python3 tool/emit_analyzer_annotations.py /tmp/flutter-analyze.txt
+          exit $result
 
       - name: Run Flutter tests
         run: flutter test --no-pub
