@@ -55,7 +55,16 @@ jobs:
         run: flutter test --no-pub
 
       - name: Build release APK for device testing
-        run: flutter build apk --release
+        shell: bash
+        run: |
+          set +e
+          flutter build apk --release > /tmp/flutter-build.txt 2>&1
+          result=$?
+          cat /tmp/flutter-build.txt
+          if [ "$result" -ne 0 ]; then
+            python3 tool/emit_failure_annotation.py /tmp/flutter-build.txt
+          fi
+          exit $result
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

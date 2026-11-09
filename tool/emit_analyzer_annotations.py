@@ -21,5 +21,9 @@ for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
     print(f'::{level} {location}::{escape(detail)}')
     count += 1
 if count == 0:
-    output = escape(path.read_text(encoding='utf-8', errors='replace')[:12000])
-    print(f'::error title=Analyzer raw output::{output}')
+    raw = path.read_text(encoding='utf-8', errors='replace')
+    if 'No issues found!' in raw:
+        print('::notice title=Flutter analysis::No issues found.')
+    else:
+        output = escape(raw[:12000])
+        print(f'::error title=Analyzer raw output::{output}')
