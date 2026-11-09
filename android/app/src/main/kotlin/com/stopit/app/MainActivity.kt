@@ -105,7 +105,7 @@ internal object AppStateStorage {
             }
         }
         val merged = JSONArray()
-        for (record in records.values.takeLast(150)) merged.put(record)
+        for (record in records.values.toList().takeLast(150)) merged.put(record)
         incoming.put("blockedAttempts", merged)
         prefs.edit().putString(KEY, incoming.toString()).apply()
     }
