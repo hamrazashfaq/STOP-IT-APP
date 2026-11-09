@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -73,3 +73,13 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish downloadable sideload build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="device-test-${GITHUB_RUN_ID}"
+          gh release create "$tag" build/app/outputs/flutter-apk/app-release.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "STOP IT! device-test APK ${GITHUB_RUN_NUMBER}" \
+            --notes "Installable Android test build. Sideload on your own device; this is not a Play Store release. The app's VPN/DNS filtering coverage has not been verified on physical devices and does not block all adult content."
